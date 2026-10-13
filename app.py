@@ -20,6 +20,8 @@ from crypto.alphabets import get_alphabet
 app = Flask(__name__)
 app.secret_key = "baikonur-escape-room-dev-secret-2026"
 
+db.init_db()
+
 CIPHER_VALIDATORS = {
     "caesar": caesar.validate_key,
     "vigenere": vigenere.validate_key,
@@ -556,5 +558,4 @@ def teacher_reset():
 
 
 if __name__ == "__main__":
-    db.init_db()
     app.run(debug=True, host="0.0.0.0", port=5000)
