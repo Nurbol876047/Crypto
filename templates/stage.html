@@ -35,11 +35,12 @@
     {% elif stage.cipher == "vigenere" %}
         <h3>Шифрмәтін</h3>
         <div class="ciphertext-box">{{ stage.ciphertext }}</div>
-        <div class="grid-2">
-            <div class="panel" style="margin:0;"><strong>Экран 1</strong><p class="muted">Байланыс орнатылды...</p></div>
-            <div class="panel" style="margin:0;"><strong>Экран 2</strong><p class="muted">Сигнал тұрақты...</p></div>
+        <div class="grid-3">
+            {% for part in stage.keyword_fragments %}
+                <div class="panel" style="margin:0;"><strong>Экран {{ loop.index }}</strong><p class="keyword-fragment">{{ part }}</p></div>
+            {% endfor %}
         </div>
-        <p class="muted">Кілт сөзді табу үшін көмек бөліміне жүгініңіз.</p>
+        <p class="muted">Экрандардағы бөліктерді ретімен біріктіріп, кілт сөзді алыңыз.</p>
 
     {% elif stage.cipher == "columnar" %}
         <h3>Шифрмәтін</h3>
@@ -128,6 +129,11 @@
             <button class="btn" id="submit-btn" type="button" {{ 'disabled' if locked else '' }}>Жіберу</button>
         </div>
         <div class="feedback" id="feedback"></div>
+
+        <div class="answer-reveal-panel">
+            <button class="btn btn-secondary" id="reveal-answer-btn" type="button">Жауапты көру</button>
+            <div class="answer-reveal-box" id="answer-reveal-box" style="display:none;"></div>
+        </div>
 
         <div class="hints-panel">
             <h3>Көмек (әр деңгей ұпайды азайтады)</h3>

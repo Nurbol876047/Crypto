@@ -41,6 +41,20 @@ def get_stage_config(config, stage_number):
     return config["stages"][str(stage_number)]
 
 
+def _split_into_parts(word, part_count):
+    """Сөзді дәйекті бөліктерге бөледі (мысалы, бөлмедегі бірнеше экранға шашырату үшін)."""
+    n = len(word)
+    base, extra = divmod(n, part_count)
+    sizes = [base + 1] * extra + [base] * (part_count - extra)
+    parts = []
+    pos = 0
+    for size in sizes:
+        if size:
+            parts.append(word[pos:pos + size])
+            pos += size
+    return parts
+
+
 def build_stage_view(config, stage_number):
     """Строит все данные, нужные для отображения этапа, включая свежий шифротекст."""
     stage = get_stage_config(config, stage_number)
@@ -60,6 +74,8 @@ def build_stage_view(config, stage_number):
             view["key_alphabet"] = stage["key"].get("alphabet")
         if cipher == "caesar":
             view["frequencies"] = caesar.letter_frequencies(view["ciphertext"], stage["key"]["alphabet"])
+        if cipher == "vigenere":
+            view["keyword_fragments"] = _split_into_parts(stage["key"]["keyword"], 3)
     elif cipher == "hash":
         files = stage["files"]
         ref_content = next(f["content"] for f in files if f["label"] == stage["reference_label"])
@@ -96,6 +112,77 @@ def check_answer(config, stage_number, submitted_answer):
     correct = normalize_answer(stage["plaintext"])
     submitted = normalize_answer(submitted_answer)
     return submitted == correct
+
+
+def get_answer_reveal(config, stage_number):
+    """
+    Нақты жауап пен оның неге дұрыс екенін түсіндіретін қысқа мәтінді қайтарады
+    («Жауапты көру» батырмасы үшін). Мәндер ағымдағы конфигтен алынады, сондықтан
+    мұғалім кілтті өзгертсе де түсіндірме сәйкес қалады.
+    """
+    stage = get_stage_config(config, stage_number)
+    cipher = stage["cipher"]
+
+    if cipher == "caesar":
+        shift = stage["key"]["shift"]
+        answer = stage["plaintext"]
+        explanation = (
+            f"Бұл мәтінде әр әріп алфавит бойынша дәл {shift} позицияға ығыстырылған — сондықтан "
+            f"шифрмәтіннің әр әрпін {shift} қадам кері санасаңыз, ашық мәтін қайта пайда болады. "
+            "Бір ғана сан бүкіл хабарды жасырады: сол санды тапсаңыз, бәрі бірден ашылады."
+        )
+    elif cipher == "vigenere":
+        keyword = stage["key"]["keyword"]
+        answer = stage["plaintext"]
+        explanation = (
+            f"Бұл — бірнеше Цезарь ығысуының тізбегі: «{keyword}» кілт сөзінің әр әрпі өз ығысу шамасын "
+            "береді, әрі бұл ығысулар мәтін бойы қайта-қайта қайталанады. Сондықтан бір сдвигпен емес, "
+            "кілт әрпіне сәйкес әр позицияны бөлек кері ығыстыру керек."
+        )
+    elif cipher == "columnar":
+        keyword = stage["key"]["keyword"]
+        answer = stage["plaintext"]
+        explanation = (
+            f"Әріптер ауыстырылмаған, тек орындары араласқан: мәтін «{keyword}» сөзінің ұзындығындай "
+            f"({len(keyword)}) бағанға жазылып, содан соң бағандар кілт әріптерінің алфавиттегі реті "
+            "бойынша қайта оқылған. Шифрмәтінді сол ретпен бағандарға бөліп, бастапқы ретімен "
+            "құрастырса, сөйлем қалпына келеді."
+        )
+    elif cipher == "playfair":
+        keyword = stage["key"]["keyword"]
+        answer = playfair.preprocessed_plaintext(stage["plaintext"])
+        explanation = (
+            f"«{keyword}» кілт сөзімен құрылған 5×5 кестеде шифрмәтіннің әр әріп жұбы орналасуына қарай "
+            "(бір жолда — оңға, бір бағанда — төмен, басқаша — бағандары ауыстырылып) ашылады. "
+            f"Оқылатын мәтін: «{stage['plaintext']}». Бірақ «Жауап» өрісіне дәл осы блоктағыдай, "
+            "бос орынсыз және соңындағы қосымша «X» әрпімен бірге жазу керек."
+        )
+    elif cipher == "hash":
+        label = stage["reference_label"]
+        answer = label
+        explanation = (
+            "SHA-256 — қайтымсыз функция: тіпті бір ғана әріп өзгерсе де, нәтиже хэш мүлдем басқаша "
+            f"болады («көшкін эффектісі»). Бес файлдың ішінен тек {label}-файлдың мәтінінен есептелген "
+            "хэш беттегі эталон хэшпен дәл сәйкес келеді, қалғандарының мәтінінде бір-екі таңба өзгертілген."
+        )
+    elif cipher == "rsa":
+        p, q, e = stage["key"]["p"], stage["key"]["q"], stage["key"]["e"]
+        n, phi, d = rsa_utils.compute_private_key(p, q, e)
+        answer = stage["plaintext"]
+        explanation = (
+            f"n={n} санын p={p} және q={q} жай көбейткіштеріне жіктегеннен кейін φ(n)={phi} есептеледі, "
+            f"содан e={e} санының φ(n) бойынша кері элементі d={d} табылады. Әр санды m = c^d mod n "
+            "формуласымен ашып, нәтиже сандарын кодтар кестесі арқылы әріп/санға айналдырса, жауап шығады."
+        )
+    else:
+        answer = stage.get("plaintext", "")
+        explanation = ""
+
+    return {
+        "answer": answer,
+        "explanation": explanation,
+        "fragment": get_code_fragment(config, stage_number),
+    }
 
 
 def get_code_fragment(config, stage_number):

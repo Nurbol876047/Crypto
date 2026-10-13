@@ -246,6 +246,20 @@ def request_hint(n):
     return jsonify(level=level, text=stage_cfg["hints"][level - 1])
 
 
+@app.route("/api/stage/<int:n>/answer", methods=["POST"])
+@player_required
+def reveal_answer(n):
+    if not (1 <= n <= quest_config.STAGE_COUNT):
+        abort(404)
+    config = quest_config.load_config()
+    reveal = quest_config.get_answer_reveal(config, n)
+    return jsonify(
+        answer=reveal["answer"],
+        explanation=reveal["explanation"],
+        fragment=reveal["fragment"],
+    )
+
+
 @app.route("/api/stage/4/check-key", methods=["POST"])
 @player_required
 def check_playfair_key():
