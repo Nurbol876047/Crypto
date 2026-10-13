@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}{{ stage.number }}. {{ stage.title }}{% endblock %}
+{% block content %}
+<div class="panel" data-stage="{{ stage.number }}" id="stage-panel">
+    <p><a href="{{ url_for('bunker') }}">← Бункер картасына оралу</a></p>
+    <h1>{{ stage.number }}. {{ stage.title }}</h1>
+    <p class="tag">{{ stage.subtitle }}</p>
+    <p>{{ stage.intro }}</p>
+
+    {% if solved %}
+        <div class="flash-box">
+            ✅ Бұл бөлме шешілді! Кодтың фрагменті: <strong>{{ fragment }}</strong>
+        </div>
+    {% endif %}
+
+    {# ---------------- ШИФРМӘТІН / ТАПСЫРМА ---------------- #}
+
+    {% if stage.cipher == "caesar" %}
+        <h3>Шифрмәтін</h3>
+        <div class="ciphertext-box">{{ stage.ciphertext }}</div>
+        <h3>Частотты талдау құралы</h3>
+        <p class="muted">Қазақ тілінде ең жиі кездесетін әріптер: А, Ы, Е, Н. Төмендегі гистограммадан шифрмәтіндегі ең жиі әріпті тауып, салыстырыңыз.</p>
+        <div class="freq-chart">
+            {% for letter, count in stage.frequencies.counts.items() %}
+                {% if count > 0 %}
+                <div class="freq-bar">
+                    <div class="bar" style="height: {{ (count / (stage.frequencies.total or 1) * 130) | round(0, 'ceil') }}px;"></div>
+                    <div class="letter">{{ letter }}</div>
+                    <div class="count">{{ count }}</div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+    {% elif stage.cipher == "vigenere" %}
+        <h3>Шифрмәтін</h3>
+        <div class="ciphertext-box">{{ stage.ciphertext }}</div>
+        <div class="grid-2">
+            <div class="panel" style="margin:0;"><strong>Экран 1</strong><p class="muted">Байланыс орнатылды...</p></div>
+            <div class="panel" style="margin:0;"><strong>Экран 2</strong><p class="muted">Сигнал тұрақты...</p></div>
+        </div>
+        <p class="muted">Кілт сөзді табу үшін көмек бөліміне жүгініңіз.</p>
+
+    {% elif stage.cipher == "columnar" %}
+        <h3>Шифрмәтін</h3>
+        <div class="ciphertext-box">{{ stage.ciphertext }}</div>
+        <p class="muted">Бұл - бағаналы орын ауыстыру шифры. Алдыңғы бөлмеде тапқан кілт сөзді қолданыңыз.</p>
+
+    {% elif stage.cipher == "playfair" %}
+        <h3>Шифрмәтін (биграммалар)</h3>
+        <div class="ciphertext-box">
+            {% for i in range(0, stage.ciphertext|length, 2) %}{{ stage.ciphertext[i:i+2] }} {% endfor %}
+        </div>
+        <h3>5×5 кесте</h3>
+        <p class="muted">Кестені ашу үшін дұрыс кілт сөзді латынша енгізіңіз (I мен J бірдей ұяшықта).</p>
+        <div class="answer-row">
+            <input type="text" id="playfair-key-input" placeholder="Кілт сөз (латынша)">
+            <button class="btn btn-secondary" id="playfair-check-btn" type="button">Кестені ашу</button>
+        </div>
+        <div id="playfair-key-feedback" class="feedback"></div>
+        <div id="playfair-table-container"></div>
+
+    {% elif stage.cipher == "hash" %}
+        <h3>Эталон хэш (SHA-256)</h3>
+        <div class="ciphertext-box">{{ stage.reference_hash }}</div>
+        <h3>Файлдар</h3>
+        {% for f in stage.files %}
+            <div class="file-card">
+                <strong>{{ f.label }}-файл</strong>
+                <p>{{ f.content }}</p>
+                <button class="btn btn-secondary hash-calc-btn" type="button" data-content="{{ f.content }}" data-target="hash-out-{{ f.label }}">SHA-256 есептеу</button>
+                <div class="hash-out" id="hash-out-{{ f.label }}"></div>
+            </div>
+        {% endfor %}
+        <h3>Өз мәтінінің хэшін тексеру (калькулятор)</h3>
+        <textarea id="hash-calc-input" rows="2" placeholder="Кез келген мәтінді осында қойып, SHA-256 есептеуін көруге болады"></textarea>
+        <button class="btn btn-secondary" type="button" id="hash-calc-free-btn">Есептеу</button>
+        <div class="hash-out" id="hash-calc-free-out"></div>
+
+    {% elif stage.cipher == "rsa" %}
+        <h3>Ашық кілт және шифрмәтін</h3>
+        <p>n = <strong>{{ stage.n }}</strong>, e = <strong>{{ stage.e }}</strong></p>
+        <div class="ciphertext-box">{{ stage.cipher_numbers|join(', ') }}</div>
+        <p class="muted">Код алфавиты (әрбір санға сәйкес таңба): <code>{{ "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ "|replace(' ', '[бос орын]') }}</code> — 0-ден басталатын реттік нөмір.</p>
+
+        <h3>RSA калькуляторы</h3>
+        <div class="rsa-calc-grid">
+            <div>
+                <label>Жай сан тексеру</label>
+                <input type="number" id="rsa-prime-input" placeholder="Мысалы: 47">
+                <button class="btn btn-secondary" type="button" id="rsa-prime-btn">Тексеру</button>
+                <div class="muted" id="rsa-prime-out"></div>
+            </div>
+            <div>
+                <label>ЕҮОБ (НОД)</label>
+                <input type="number" id="rsa-gcd-a" placeholder="a">
+                <input type="number" id="rsa-gcd-b" placeholder="b">
+                <button class="btn btn-secondary" type="button" id="rsa-gcd-btn">Есептеу</button>
+                <div class="muted" id="rsa-gcd-out"></div>
+            </div>
+            <div>
+                <label>Кері элемент (mod)</label>
+                <input type="number" id="rsa-inv-a" placeholder="a">
+                <input type="number" id="rsa-inv-m" placeholder="модуль (m)">
+                <button class="btn btn-secondary" type="button" id="rsa-inv-btn">Есептеу</button>
+                <div class="muted" id="rsa-inv-out"></div>
+            </div>
+            <div>
+                <label>m = c^d mod n</label>
+                <input type="number" id="rsa-pow-c" placeholder="c (шифрмәтін саны)">
+                <input type="number" id="rsa-pow-d" placeholder="d">
+                <input type="number" id="rsa-pow-n" placeholder="n">
+                <button class="btn btn-secondary" type="button" id="rsa-pow-btn">Есептеу</button>
+                <div class="muted" id="rsa-pow-out"></div>
+            </div>
+        </div>
+    {% endif %}
+
+    {# ---------------- ЖАУАП БЕРУ ---------------- #}
+
+    {% if not solved %}
+        <div class="lock-banner" id="lock-banner" style="{{ '' if locked else 'display:none;' }}"></div>
+
+        <h3>Жауап</h3>
+        <p class="muted">Әрекеттер саны: <span id="attempts-counter">{{ progress.attempts_count }}</span></p>
+        <div class="answer-row">
+            <input type="text" id="answer-input" placeholder="Ашық мәтінді енгізіңіз" {{ 'disabled' if locked else '' }}>
+            <button class="btn" id="submit-btn" type="button" {{ 'disabled' if locked else '' }}>Жіберу</button>
+        </div>
+        <div class="feedback" id="feedback"></div>
+
+        <div class="hints-panel">
+            <h3>Көмек (әр деңгей ұпайды азайтады)</h3>
+            <div class="hint-btn-row">
+                {% for lvl in range(1, total_hints + 1) %}
+                    <button class="btn btn-secondary hint-btn" type="button" data-level="{{ lvl }}"
+                        {{ '' if lvl == opened_hints|length + 1 else 'disabled' }}>
+                        Көмек {{ lvl }} (-2 балл)
+                    </button>
+                {% endfor %}
+            </div>
+            <div id="hints-container">
+                {% for h in opened_hints %}
+                    <div class="hint-text">{{ h }}</div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+window.QUEST = {
+    stageNumber: {{ stage.number }},
+    solved: {{ 'true' if solved else 'false' }},
+    locked: {{ 'true' if locked else 'false' }},
+    lockSeconds: {{ lock_seconds }},
+    openedHints: {{ opened_hints|length }},
+    totalHints: {{ total_hints }}
+};
+</script>
+<script src="{{ url_for('static', filename='js/quest.js') }}"></script>
+{% if stage.cipher == "playfair" %}<script src="{{ url_for('static', filename='js/stage4.js') }}"></script>{% endif %}
+{% if stage.cipher == "hash" %}<script src="{{ url_for('static', filename='js/stage5.js') }}"></script>{% endif %}
+{% if stage.cipher == "rsa" %}<script src="{{ url_for('static', filename='js/stage6.js') }}"></script>{% endif %}
+{% endblock %}

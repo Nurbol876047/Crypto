@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Рефлексия{% endblock %}
+{% block content %}
+<div class="panel">
+    <h1>Рефлексия: алгоритмдерді салыстыру</h1>
+    <p class="muted">
+        Квестте кездескен әр алгоритм үшін төмендегі бағандарды толтырыңыз.
+        Жауаптарыңыз сақталады, қайта кіргенде оларды өзгертуге болады.
+    </p>
+
+    <form method="post">
+        <div style="overflow-x:auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Алгоритм</th>
+                    {% for field in fields %}
+                        <th>{{ field.label }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td><strong>{{ row.algorithm }}</strong></td>
+                    {% for field in fields %}
+                        <td>
+                            <textarea name="{{ row.row_key }}__{{ field.field_key }}" rows="2" style="margin:0;">{{ answers.get(row.row_key, {}).get(field.field_key, '') }}</textarea>
+                        </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        <button type="submit" class="btn">Жауаптарды сақтау</button>
+    </form>
+
+    <p style="margin-top: 20px;"><a href="{{ url_for('bunker') }}">← Бункер картасына оралу</a></p>
+</div>
+{% endblock %}

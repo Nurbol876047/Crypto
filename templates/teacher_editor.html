@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Кезең {{ n }} конструкторы{% endblock %}
+{% block content %}
+<div class="panel">
+    <p><a href="{{ url_for('teacher_dashboard') }}">← Мұғалім панеліне оралу</a></p>
+    <h1>Кезең {{ n }}: {{ stage.title }} <span class="tag">{{ cipher }}</span></h1>
+
+    {% if errors %}
+        <div class="lock-banner">
+            <strong>Қателер:</strong>
+            <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    {% if preview %}
+        <div class="flash-box">
+            Сақталды. Жаңа шифрмәтін:
+            <div class="ciphertext-box">
+                {% if cipher == "rsa" %}
+                    n={{ preview.n }}, e={{ preview.e }}: {{ preview.cipher_numbers|join(', ') }}
+                {% elif cipher == "hash" %}
+                    Эталон хэш: {{ preview.reference_hash }}
+                {% else %}
+                    {{ preview.ciphertext }}
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+
+    <form method="post" id="editor-form">
+        {% if cipher in ("caesar", "vigenere", "columnar") %}
+            <label>Ашық мәтін</label>
+            <textarea name="plaintext" id="f-plaintext" rows="3">{{ stage.plaintext }}</textarea>
+
+            <label>Алфавит</label>
+            <select name="alphabet" id="f-alphabet">
+                <option value="kazakh" {{ 'selected' if stage.key.alphabet == 'kazakh' else '' }}>Қазақ (42 әріп)</option>
+                <option value="latin" {{ 'selected' if stage.key.alphabet == 'latin' else '' }}>Латын</option>
+            </select>
+
+            {% if cipher == "caesar" %}
+                <label>Ығысу (shift)</label>
+                <input type="number" name="shift" id="f-shift" value="{{ stage.key.shift }}">
+            {% else %}
+                <label>Кілт сөз</label>
+                <input type="text" name="keyword" id="f-keyword" value="{{ stage.key.keyword }}">
+            {% endif %}
+
+            <button type="button" class="btn btn-secondary" id="randomize-btn">🎲 Кездейсоқ кілт жасау</button>
+            <div class="muted" id="randomize-preview"></div>
+
+        {% elif cipher == "playfair" %}
+            <label>Ашық мәтін (латынша)</label>
+            <textarea name="plaintext" id="f-plaintext" rows="3">{{ stage.plaintext }}</textarea>
+
+            <label>Кілт сөз (тек латын әріптері)</label>
+            <input type="text" name="keyword" id="f-keyword" value="{{ stage.key.keyword }}">
+
+            <button type="button" class="btn btn-secondary" id="randomize-btn">🎲 Кездейсоқ кілт жасау</button>
+            <div class="muted" id="randomize-preview"></div>
+
+        {% elif cipher == "rsa" %}
+            <label>Ұшыру коды (тек A-Z, 0-9, бос орын)</label>
+            <input type="text" name="plaintext" id="f-plaintext" value="{{ stage.plaintext }}">
+
+            <div class="grid-2">
+                <div>
+                    <label>p (жай сан, &lt;100)</label>
+                    <input type="number" name="p" id="f-p" value="{{ stage.key.p }}">
+                </div>
+                <div>
+                    <label>q (жай сан, &lt;100)</label>
+                    <input type="number" name="q" id="f-q" value="{{ stage.key.q }}">
+                </div>
+            </div>
+            <label>e</label>
+            <input type="number" name="e" id="f-e" value="{{ stage.key.e }}">
+
+            <button type="button" class="btn btn-secondary" id="randomize-btn">🎲 Кездейсоқ кілт жасау</button>
+            <div class="muted" id="randomize-preview"></div>
+
+        {% elif cipher == "hash" %}
+            {% for i in range(1, 6) %}
+                {% set f = stage.files[i-1] if stage.files|length >= i else {"label": i, "content": ""} %}
+                <div class="file-card">
+                    <label>{{ i }}-файл белгісі</label>
+                    <input type="text" name="file_label_{{ i }}" value="{{ f.label }}">
+                    <label>Мазмұны</label>
+                    <textarea name="file_content_{{ i }}" rows="2">{{ f.content }}</textarea>
+                </div>
+            {% endfor %}
+            <label>Эталон (шынайы) файл белгісі</label>
+            <input type="text" name="reference_label" value="{{ stage.reference_label }}">
+        {% endif %}
+
+        <label>Көмек 1 (жалпы нұсқау)</label>
+        <textarea name="hint1" rows="2">{{ stage.hints[0] if stage.hints|length > 0 else '' }}</textarea>
+        <label>Көмек 2 (әдіс)</label>
+        <textarea name="hint2" rows="2">{{ stage.hints[1] if stage.hints|length > 1 else '' }}</textarea>
+        <label>Көмек 3 (шешімге жақын)</label>
+        <textarea name="hint3" rows="2">{{ stage.hints[2] if stage.hints|length > 2 else '' }}</textarea>
+
+        <label>Код фрагменті (бункер картасында көрсетіледі)</label>
+        <input type="text" name="code_fragment" value="{{ stage.code_fragment or '' }}">
+
+        <button type="submit" class="btn">Сақтау</button>
+    </form>
+</div>
+{% endblock %}
+{% block scripts %}
+{% if cipher != "hash" %}
+<script src="{{ url_for('static', filename='js/teacher.js') }}"></script>
+<script>window.TEACHER_STAGE = {{ n }};</script>
+{% endif %}
+{% endblock %}

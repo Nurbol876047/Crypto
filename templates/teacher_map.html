@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Квест картасы (жауаптар){% endblock %}
+{% block content %}
+<div class="panel">
+    <p class="no-print"><a href="{{ url_for('teacher_dashboard') }}">← Мұғалім панеліне оралу</a>
+        <button class="btn btn-secondary" onclick="window.print()">🖨️ Басып шығару</button></p>
+    <h1>Квест картасы — жауаптар кілті</h1>
+    <p class="muted">Бұл бет тек мұғалімге арналған. Әр кезеңнің ашық мәтіні, кілті және шифрмәтіні.</p>
+
+    {% for item in views %}
+        {% set cfg = item.cfg %}
+        {% set v = item.view %}
+        <div class="panel" style="border-color: var(--accent);">
+            <h2>{{ item.number }}. {{ cfg.title }} ({{ cfg.cipher }})</h2>
+            <p><strong>Ашық мәтін:</strong> {{ cfg.plaintext if cfg.cipher != "hash" else "—" }}</p>
+
+            {% if cfg.cipher in ("caesar",) %}
+                <p><strong>Кілт:</strong> shift={{ cfg.key.shift }}, alphabet={{ cfg.key.alphabet }}</p>
+            {% elif cfg.cipher in ("vigenere", "columnar") %}
+                <p><strong>Кілт сөз:</strong> {{ cfg.key.keyword }} ({{ cfg.key.alphabet }})</p>
+            {% elif cfg.cipher == "playfair" %}
+                <p><strong>Кілт сөз:</strong> {{ cfg.key.keyword }}</p>
+            {% elif cfg.cipher == "rsa" %}
+                <p><strong>p</strong> = {{ cfg.key.p }}, <strong>q</strong> = {{ cfg.key.q }}, <strong>e</strong> = {{ cfg.key.e }}, <strong>n</strong> = {{ v.n }}</p>
+            {% elif cfg.cipher == "hash" %}
+                <p><strong>Эталон файл:</strong> {{ cfg.reference_label }}-файл</p>
+                <p><strong>Эталон хэш:</strong> {{ v.reference_hash }}</p>
+                <ul>
+                {% for f in cfg.files %}
+                    <li>{{ f.label }}-файл: {{ f.content }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+
+            {% if cfg.cipher != "hash" %}
+                <p><strong>Шифрмәтін:</strong></p>
+                <div class="ciphertext-box">
+                    {% if cfg.cipher == "rsa" %}{{ v.cipher_numbers|join(', ') }}{% else %}{{ v.ciphertext }}{% endif %}
+                </div>
+            {% endif %}
+
+            <p><strong>Код фрагменті:</strong> {{ cfg.code_fragment or cfg.plaintext }}</p>
+        </div>
+    {% endfor %}
+
+    <div class="panel">
+        <h2>Толық ұшыру коды</h2>
+        <div class="ciphertext-box">{{ final_code }}</div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Кіру — Байқоңыр бункері{% endblock %}
+{% block content %}
+<div class="panel">
+    <h1>🚀 Байқоңыр бункері: ұшыру коды</h1>
+    <p class="muted">
+        Хакер ракетаның ұшыру жүйесін бұғаттап тастады. Сіздің командаңыз — киберинженерлер.
+        Бункердің 6 бөлмесінен өтіп, әр жерде жасырылған хабарламаны ашып, ұшыру кодының
+        фрагментін табуыңыз керек.
+    </p>
+
+    <div class="mode-tabs">
+        <div class="mode-tab active" id="tab-solo" onclick="selectMode('solo')">Жеке</div>
+        <div class="mode-tab" id="tab-team" onclick="selectMode('team')">Топтық</div>
+    </div>
+
+    <form method="post" action="{{ url_for('start') }}">
+        <input type="hidden" name="mode" id="mode-input" value="solo">
+
+        <div id="solo-fields">
+            <label for="name">Атыңыз</label>
+            <input type="text" id="name" name="name" placeholder="Мысалы: Айдана" maxlength="60">
+        </div>
+
+        <div id="team-fields" style="display:none;">
+            <label for="team_name">Команда атауы</label>
+            <input type="text" id="team_name" name="team_name" placeholder="Мысалы: Орбита" maxlength="60">
+
+            <label>Қатысушылар (2-4 адам)</label>
+            <input type="text" name="member1" placeholder="1-қатысушы">
+            <input type="text" name="member2" placeholder="2-қатысушы">
+            <input type="text" name="member3" placeholder="3-қатысушы (міндетті емес)">
+            <input type="text" name="member4" placeholder="4-қатысушы (міндетті емес)">
+        </div>
+
+        <button type="submit" class="btn">Бункерге кіру →</button>
+    </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function selectMode(mode) {
+    document.getElementById('mode-input').value = mode;
+    document.getElementById('tab-solo').classList.toggle('active', mode === 'solo');
+    document.getElementById('tab-team').classList.toggle('active', mode === 'team');
+    document.getElementById('solo-fields').style.display = mode === 'solo' ? 'block' : 'none';
+    document.getElementById('team-fields').style.display = mode === 'team' ? 'block' : 'none';
+}
+</script>
+{% endblock %}

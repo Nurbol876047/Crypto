@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Мұғалім панелі{% endblock %}
+{% block content %}
+<div class="panel">
+    <h1>Мұғалім панелі</h1>
+    <nav style="margin-bottom:16px;">
+        <a href="{{ url_for('teacher_map') }}" class="btn btn-secondary">Квест картасы (жауаптар)</a>
+        <a href="{{ url_for('teacher_export_csv') }}" class="btn btn-secondary">CSV экспорт</a>
+        <a href="{{ url_for('teacher_reset') }}" class="btn btn-danger">Прогрессті нөлдеу</a>
+        <a href="{{ url_for('teacher_logout') }}" class="btn btn-secondary">Шығу</a>
+    </nav>
+
+    <h2>Кезеңдер конструкторы</h2>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px;">
+        {% for n in range(1, stage_count + 1) %}
+            <a class="btn btn-secondary" href="{{ url_for('teacher_editor', n=n) }}">{{ n }}. {{ stage_titles[n] }}</a>
+        {% endfor %}
+    </div>
+
+    <h2>Статистика</h2>
+    <div style="overflow-x:auto;">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Ойыншы</th>
+                <th>Режим</th>
+                {% for n in range(1, stage_count + 1) %}
+                    <th>Кезең {{ n }}</th>
+                {% endfor %}
+                <th>Жалпы балл</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in stats %}
+            <tr>
+                <td>{{ entry.player['display_name'] }}</td>
+                <td>{{ 'Топтық' if entry.player['mode'] == 'team' else 'Жеке' }}</td>
+                {% for n in range(1, stage_count + 1) %}
+                    {% set p = entry.progress.get(n) %}
+                    <td>
+                        {% if p %}
+                            {{ p['status'] }}<br>
+                            <span class="muted">әрекет: {{ p['attempts_count'] }}, көмек: {{ p['max_hint_level'] }}, балл: {{ p['score'] if p['score'] is not none else '—' }}</span>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                {% endfor %}
+                <td><strong>{{ entry.total_score }}</strong></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="{{ stage_count + 3 }}">Әзірге ойыншылар жоқ.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

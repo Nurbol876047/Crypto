@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Ұшыру!{% endblock %}
+{% block content %}
+<div class="panel final-hero">
+    <div class="launch-anim">🚀</div>
+    <h1>ҰШЫРУ!</h1>
+    <p class="muted">Барлық 6 бөлме шешілді. Ракетаның толық ұшыру коды жиналды:</p>
+    <div class="code">{{ final_code }}</div>
+    <p>Жалпы балл: <strong>{{ total_score }}</strong> / {{ rows|length * 10 }}</p>
+</div>
+
+<div class="panel">
+    <h2>Нәтижелер кестесі</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Кезең</th>
+                <th>Басталды</th>
+                <th>Аяқталды</th>
+                <th>Әрекеттер</th>
+                <th>Көмектер</th>
+                <th>Балл</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in rows %}
+            <tr>
+                <td>{{ r.number }}. {{ r.title }}</td>
+                <td>{{ r.started_at or '—' }}</td>
+                <td>{{ r.completed_at or '—' }}</td>
+                <td>{{ r.attempts }}</td>
+                <td>{{ r.hints_used }}</td>
+                <td>{{ r.score }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{{ url_for('reflection') }}" class="btn">Рефлексияға өту →</a>
+</div>
+{% endblock %}

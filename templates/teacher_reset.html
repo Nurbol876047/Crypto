@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Прогрессті нөлдеу{% endblock %}
+{% block content %}
+<div class="panel">
+    <h1>Прогрессті нөлдеу</h1>
+    <p>Бұл әрекет барлық ойыншылардың прогресін, әрекеттер журналын және рефлексия жауаптарын толығымен жояды. Әрекетті болдырмау мүмкін емес.</p>
+    <form method="post">
+        <button type="submit" class="btn btn-danger">Иә, барлық прогрессті нөлдеу</button>
+        <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary">Бас тарту</a>
+    </form>
+</div>
+{% endblock %}

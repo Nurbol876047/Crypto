@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Бункер картасы{% endblock %}
+{% block content %}
+<div class="panel">
+    <h1>Бункер картасы</h1>
+    <p class="muted">
+        Ойыншы: <strong>{{ player['display_name'] }}</strong>
+        <span class="tag">{{ 'Топтық' if player['mode'] == 'team' else 'Жеке' }}</span>
+    </p>
+    {% if started_at %}
+        <p>Жалпы уақыт: <span id="timer">00:00</span></p>
+    {% endif %}
+
+    <div class="bunker-map">
+        {% for s in stages %}
+            {% if s.locked %}
+                <div class="compartment locked">
+                    <div class="num">🔒 {{ s.number }}</div>
+                    <div class="name">{{ s.title }}</div>
+                </div>
+            {% else %}
+                <a class="compartment {{ 'completed' if s.status == 'completed' else 'active' }}"
+                   href="{{ url_for('stage', n=s.number) }}">
+                    <div class="num">{{ '✅' if s.status == 'completed' else s.number }}</div>
+                    <div class="name">{{ s.title }}</div>
+                    <div class="muted">{{ s.subtitle }}</div>
+                    {% if s.fragment %}<div class="frag">{{ s.fragment }}</div>{% endif %}
+                    {% if s.score is not none %}<div class="muted">Балл: {{ s.score }}</div>{% endif %}
+                </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <h3>Жиналған код фрагменттері</h3>
+    <div class="fragments-panel">
+        {% for s in stages %}
+            {% if s.fragment %}
+                <div class="fragment-chip">{{ s.fragment }}</div>
+            {% else %}
+                <div class="fragment-chip empty">?????</div>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    {% if all_completed %}
+        <a href="{{ url_for('final') }}" class="btn">Ұшыруға өту 🚀</a>
+    {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+{% if started_at %}
+<script>startElapsedTimer('timer', '{{ started_at }}');</script>
+{% endif %}
+{% endblock %}
